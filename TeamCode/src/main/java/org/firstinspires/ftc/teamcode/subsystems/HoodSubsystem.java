@@ -5,7 +5,7 @@ import org.firstinspires.ftc.teamcode.util.MathUtil;
 
 public class HoodSubsystem {
     private final Servo hood;
-    private double targetPos = 0.20;
+    private double targetPos = .2;
 
     public HoodSubsystem(Servo hood) {
         this.hood = hood;

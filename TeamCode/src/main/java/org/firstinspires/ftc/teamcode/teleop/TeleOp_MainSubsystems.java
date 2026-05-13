@@ -27,8 +27,8 @@ public class TeleOp_MainSubsystems extends OpMode {
     private static final double RPM_TOL = 75;
 
     // Fixed-shot override (HOLD)
-    private static final double FIXED_SHOT_RPM = 3900;
-    private static final double FIXED_HOOD_POS = 0.75;
+    private static final double FIXED_SHOT_RPM = 3700;
+    private static final double FIXED_HOOD_POS = 0.8;
 
     // Toggle edge detection (gamepad2)
     private boolean lastStart2 = false;

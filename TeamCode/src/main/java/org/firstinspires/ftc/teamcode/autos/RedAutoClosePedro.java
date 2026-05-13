@@ -27,7 +27,7 @@ public class RedAutoClosePedro extends LinearOpMode {
 
     private static final Pose START = new Pose(-72, 72, Math.toRadians(180));
 
-    private static final Pose FIRST_SHOT_POSE   = new Pose(-30, 15, Math.toRadians(120));
+    private static final Pose FIRST_SHOT_POSE   = new Pose(-25, 20, Math.toRadians(130));
     private static final Pose BACK_SHOT_POSE    = new Pose(-28, 31, Math.toRadians(120));
 
     // If you want a different shoot spot for row 3 later, change this pose.
@@ -38,14 +38,14 @@ public class RedAutoClosePedro extends LinearOpMode {
     private static final Pose SECOND_SHOT_LINEUP = new Pose(40, 32, Math.toRadians(90));
     private static final Pose THIRD_SHOT_LINEUP  = new Pose(75, 32, Math.toRadians(90));
 
-    private static final Pose INTAKE_ROW1_POSE  = new Pose(5, 91, Math.toRadians(90));
-    private static final Pose ROW2_START_POSE   = new Pose(11, 32, Math.toRadians(90));
-    private static final Pose INTAKE_ROW2_POSE  = new Pose(40, 96, Math.toRadians(90));
+    private static final Pose INTAKE_ROW1_POSE  = new Pose(5, 95, Math.toRadians(90));
+    private static final Pose ROW2_START_POSE   = new Pose(42, 32, Math.toRadians(90));
+    private static final Pose INTAKE_ROW2_POSE  = new Pose(42, 110, Math.toRadians(90));
 
-    private static final Pose ROW3_START_POSE   = new Pose(20, 32, Math.toRadians(90));
-    private static final Pose INTAKE_ROW3_POSE  = new Pose(75, 96, Math.toRadians(90));
+    private static final Pose ROW3_START_POSE   = new Pose(78, 32, Math.toRadians(90));
+    private static final Pose INTAKE_ROW3_POSE  = new Pose(78, 115, Math.toRadians(90));
 
-    private static final Pose FINAL_SHOT_POSE   = new Pose(-27, 27, Math.toRadians(120));
+    private static final Pose FINAL_SHOT_POSE   = new Pose(-27, 37, Math.toRadians(120));
 
     // =========================
     // Subsystems

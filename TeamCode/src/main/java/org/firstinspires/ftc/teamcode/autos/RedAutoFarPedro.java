@@ -23,17 +23,17 @@ public class RedAutoFarPedro extends LinearOpMode {
     // =========================
     // You said -19, 47 is the far spot. We start already rotated "right 30°".
     // If your "right 30°" is the opposite direction, flip 150 to 210.
-    private static final Pose START = new Pose(-19, 47, Math.toRadians(150));
-    private static final Pose SHOOT_POSE = new Pose(-19, 47, Math.toRadians(150));
+    private static final Pose START = new Pose(-19, 47, Math.toRadians(0));
+    private static final Pose SHOOT_POSE = new Pose(-10, 47, Math.toRadians(-33));
 
     // =========================
     // INTAKE / LINEUP POSES (reusing your close coords)
     // =========================
-    private static final Pose SECOND_SHOT_LINEUP = new Pose(40, 32, Math.toRadians(90));
-    private static final Pose THIRD_SHOT_LINEUP  = new Pose(75, 32, Math.toRadians(90));
+    private static final Pose SECOND_SHOT_LINEUP = new Pose(40, -32, Math.toRadians(-90));
+    private static final Pose THIRD_SHOT_LINEUP  = new Pose(0, -32, Math.toRadians(-90));
 
-    private static final Pose INTAKE_ROW2_POSE   = new Pose(40, 87, Math.toRadians(90));
-    private static final Pose INTAKE_ROW3_POSE   = new Pose(75, 87, Math.toRadians(90));
+    private static final Pose INTAKE_ROW2_POSE   = new Pose(60, -70, Math.toRadians(-90));
+    private static final Pose INTAKE_ROW3_POSE   = new Pose(-10, -70, Math.toRadians(-90));
 
     // =========================
     // Subsystems
@@ -52,8 +52,8 @@ public class RedAutoFarPedro extends LinearOpMode {
     private static final double INTAKE_FEED_PWR = 1.0;
 
     // FIXED FAR SHOT SETTINGS (no limelight)
-    private static final double FIXED_TARGET_RPM = 3900; // <-- change this to your tested far RPM
-    private static final double FIXED_HOOD_POS   = 0.75;
+    private static final double FIXED_TARGET_RPM = 3500; // <-- change this to your tested far RPM
+    private static final double FIXED_HOOD_POS   = .56;
 
     @Override
     public void runOpMode() {
@@ -80,6 +80,7 @@ public class RedAutoFarPedro extends LinearOpMode {
         // =========================
 
         // ROW 3 FIRST
+        PathChain firstShot     = line(START,SHOOT_POSE);
         PathChain toThirdLineup = line(SHOOT_POSE, THIRD_SHOT_LINEUP);
         PathChain lineupToRow3  = line(THIRD_SHOT_LINEUP, INTAKE_ROW3_POSE);
         PathChain backToShoot3  = line(INTAKE_ROW3_POSE, SHOOT_POSE);
@@ -95,11 +96,15 @@ public class RedAutoFarPedro extends LinearOpMode {
         waitForStart();
         if (isStopRequested()) return;
 
+        hood.setTargetPos(FIXED_HOOD_POS);   // ← ADD THIS
+
         // =========================
         // AUTO SEQUENCE
         // =========================
 
         // Shoot preload (already at shoot pose)
+
+        followAndWait(firstShot);
         shootBurst3Fixed();
 
         // Row 3 first
