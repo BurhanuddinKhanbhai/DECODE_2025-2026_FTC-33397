@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.autos;
 
-import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -11,10 +10,11 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.*;
 import com.pedropathing.paths.*;
 
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.HoodSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.IntakeFeederSubsystem;
-import org.firstinspires.ftc.teamcode.subsystems.LimelightSubsystem;
+import org.firstinspires.ftc.teamcode.subsystems.LogitechCameraSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.ShooterSubsystem;
 import org.firstinspires.ftc.teamcode.util.ShooterModel;
 
@@ -54,7 +54,7 @@ public class BlueAutoClosePedro extends LinearOpMode {
     private ShooterSubsystem shooter;
     private HoodSubsystem hood;
     private IntakeFeederSubsystem intakeFeeder;
-    private LimelightSubsystem limelight;
+    private LogitechCameraSubsystem logitech;
 
     // =========================
     // Tuning
@@ -76,17 +76,13 @@ public class BlueAutoClosePedro extends LinearOpMode {
 
         Servo hoodServo = hardwareMap.get(Servo.class, "hood");
 
-        Limelight3A ll = hardwareMap.get(Limelight3A.class, "limelight");
+        WebcamName logitechCamera = hardwareMap.get(WebcamName.class, "logitech");
 
         shooter = new ShooterSubsystem(leftFly, rightFly);
         hood = new HoodSubsystem(hoodServo);
         intakeFeeder = new IntakeFeederSubsystem(intake, feeder);
-        limelight = new LimelightSubsystem(ll);
-
-        limelight.init(2, 80);
-        limelight.targetHeightIn = 30;
-        limelight.cameraHeightIn = 18;
-        limelight.cameraMountAngleDeg = 0.0;
+        logitech = new LogitechCameraSubsystem(logitechCamera);
+        logitech.init();
 
         // ---------- Pedro ----------
         follower = Constants.createFollower(hardwareMap);
@@ -183,7 +179,7 @@ public class BlueAutoClosePedro extends LinearOpMode {
         follower.followPath(path);
         while (opModeIsActive() && follower.isBusy()) {
             follower.update();
-            limelight.update();
+            logitech.update();
             shooter.update();
             hood.update();
             intakeFeeder.update();
@@ -201,7 +197,7 @@ public class BlueAutoClosePedro extends LinearOpMode {
         ElapsedTime aimTimer = new ElapsedTime();
         aimTimer.reset();
         while (opModeIsActive() && aimTimer.milliseconds() < 300) {
-            limelight.update();
+            logitech.update();
             shooter.update();
             hood.update();
             telemetry.addLine("Aiming...");
@@ -209,7 +205,7 @@ public class BlueAutoClosePedro extends LinearOpMode {
             idle();
         }
 
-        double dist = limelight.getDistanceInches();
+        double dist = logitech.getDistanceInches();
         double targetRPM = ShooterModel.rpmFromDistance(dist);
         double hoodPos = ShooterModel.hoodFromDistance(dist);
 
@@ -221,7 +217,7 @@ public class BlueAutoClosePedro extends LinearOpMode {
 
         while (opModeIsActive() && spin.milliseconds() < SPINUP_TIMEOUT_MS) {
 
-            limelight.update();
+            logitech.update();
             shooter.update();
             hood.update();
 
@@ -281,5 +277,8 @@ public class BlueAutoClosePedro extends LinearOpMode {
         intakeFeeder.setIntakePower(0);
         intakeFeeder.setFeederPower(0);
         intakeFeeder.update();
+        if (logitech != null) {
+            logitech.close();
+        }
     }
 }

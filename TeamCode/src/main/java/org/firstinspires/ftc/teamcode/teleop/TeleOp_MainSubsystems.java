@@ -1,11 +1,11 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
-import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.subsystems.*;
 import org.firstinspires.ftc.teamcode.util.MathUtil;
 import org.firstinspires.ftc.teamcode.util.ShooterModel;
@@ -17,7 +17,7 @@ public class TeleOp_MainSubsystems extends OpMode {
     private ShooterSubsystem shooter;
     private HoodSubsystem hood;
     private IntakeFeederSubsystem intakeFeeder;
-    private LimelightSubsystem limelight;
+    private LogitechCameraSubsystem logitech;
 
     // Driver controls
     private boolean autoAimEnabled = true;
@@ -38,9 +38,9 @@ public class TeleOp_MainSubsystems extends OpMode {
     private long lastAdjustMs = 0;
     private static final long ADJUST_PERIOD_MS = 140;
 
-    // Limelight safety / fallback
-    private long llFaultUntilMs = 0;                  // if LL throws, ignore LL until this time
-    private static final long LL_FAULT_COOLDOWN_MS = 600;
+    // Logitech camera safety / fallback
+    private long cameraFaultUntilMs = 0;
+    private static final long CAMERA_FAULT_COOLDOWN_MS = 600;
     private double lastGoodDistanceIn = 70;           // fallback distance for autoaim
     private long lastGoodDistanceMs = 0;
     private static final long GOOD_DIST_STALE_MS = 1000;
@@ -64,24 +64,17 @@ public class TeleOp_MainSubsystems extends OpMode {
         // Hood servo
         Servo hoodServo = hardwareMap.get(Servo.class, "hood");
 
-        // Limelight
-        Limelight3A ll = hardwareMap.get(Limelight3A.class, "limelight");
+        // Logitech webcam
+        WebcamName logitechCamera = hardwareMap.get(WebcamName.class, "logitech");
 
         drive = new DriveSubsystem(fl, fr, bl, br);
         shooter = new ShooterSubsystem(leftFly, rightFly);
         hood = new HoodSubsystem(hoodServo);
         intakeFeeder = new IntakeFeederSubsystem(intake, feeder);
-        limelight = new LimelightSubsystem(ll);
+        logitech = new LogitechCameraSubsystem(logitechCamera);
+        logitech.init();
 
-        // Pipeline 2
-        limelight.init(2, 80);
-
-        // Set your real robot values here
-        limelight.targetHeightIn = 30;        // tag center height
-        limelight.cameraHeightIn = 18;        // lens center height
-        limelight.cameraMountAngleDeg = 0.0;  // tilt
-
-        telemetry.addLine("TeleOp ready (Crash-Proof, No Angle Debug)");
+        telemetry.addLine("TeleOp ready (Logitech camera, Crash-Proof)");
         telemetry.addLine("GP1: drive, A=shoot hold (autoaim), B=FIXED SHOT hold, X=feeder reverse, triggers=intake");
         telemetry.addLine("GP1: Y=override run both forward");
         telemetry.addLine("GP2: RB enable shooter, LB disable shooter, Start toggle AutoAim, Back toggle PIDF/FF");
@@ -91,12 +84,12 @@ public class TeleOp_MainSubsystems extends OpMode {
     @Override
     public void loop() {
         // =======================
-        // Safe Limelight update (never crash)
+        // Safe camera update (never crash)
         // =======================
-        safeLimelightUpdate();
+        safeCameraUpdate();
 
-        // Read Limelight safely (even if blocked)
-        LimelightRead llr = safeLimelightRead();
+        // Read camera safely (even if blocked)
+        CameraRead cameraRead = safeCameraRead();
 
         // =======================
         // Drive (gamepad1)
@@ -145,7 +138,7 @@ public class TeleOp_MainSubsystems extends OpMode {
         double hoodPos;
 
         if (fixedShotHeld) {
-            // HARD OVERRIDE: ignore Limelight/AutoAim entirely while held
+            // HARD OVERRIDE: ignore camera/AutoAim entirely while held
             targetRPM = FIXED_SHOT_RPM;
             hoodPos = FIXED_HOOD_POS;
 
@@ -233,35 +226,35 @@ public class TeleOp_MainSubsystems extends OpMode {
         telemetry.addData("Power", "%.3f", shooter.getLastPower());
         telemetry.addData("Hood", "%.3f", hood.getTargetPos());
 
-        telemetry.addData("LL fault", (System.currentTimeMillis() < llFaultUntilMs));
-        telemetry.addData("LL hasTarget", llr.hasTarget);
-        telemetry.addData("LL pipeline", llr.pipeline);
-        telemetry.addData("LL tx/ty", "%.2f / %.2f", llr.tx, llr.ty);
+        telemetry.addData("Camera fault", (System.currentTimeMillis() < cameraFaultUntilMs));
+        telemetry.addData("Camera hasTarget", cameraRead.hasTarget);
+        telemetry.addData("Camera pipeline", cameraRead.pipeline);
+        telemetry.addData("Camera tx/ty", "%.2f / %.2f", cameraRead.tx, cameraRead.ty);
         telemetry.addData("Dist(lastGood)", "%.1f", lastGoodDistanceIn);
 
         telemetry.update();
     }
 
     // =========================
-    // SAFE LIMELIGHT WRAPPERS
+    // SAFE CAMERA WRAPPERS
     // =========================
 
-    private void safeLimelightUpdate() {
+    private void safeCameraUpdate() {
         long now = System.currentTimeMillis();
-        if (now < llFaultUntilMs) return;
+        if (now < cameraFaultUntilMs) return;
 
         try {
-            limelight.update();
+            logitech.update();
         } catch (Exception e) {
-            llFaultUntilMs = now + LL_FAULT_COOLDOWN_MS;
+            cameraFaultUntilMs = now + CAMERA_FAULT_COOLDOWN_MS;
         }
     }
 
-    private LimelightRead safeLimelightRead() {
-        LimelightRead out = new LimelightRead();
+    private CameraRead safeCameraRead() {
+        CameraRead out = new CameraRead();
 
         long now = System.currentTimeMillis();
-        if (now < llFaultUntilMs) {
+        if (now < cameraFaultUntilMs) {
             out.hasTarget = false;
             out.pipeline = -1;
             out.tx = 0;
@@ -270,21 +263,21 @@ public class TeleOp_MainSubsystems extends OpMode {
         }
 
         try {
-            out.hasTarget = limelight.hasTarget();
-            out.pipeline = limelight.getPipelineIndex();
-            out.tx = limelight.getTxDeg();
-            out.ty = limelight.getTyDeg();
+            out.hasTarget = logitech.hasTarget();
+            out.pipeline = logitech.getPipelineIndex();
+            out.tx = logitech.getTxDeg();
+            out.ty = logitech.getTyDeg();
 
             // Update last-good distance only when a target exists
             if (out.hasTarget) {
-                double d = limelight.getDistanceInches();
+                double d = logitech.getDistanceInches();
                 if (!Double.isNaN(d) && !Double.isInfinite(d) && d > 0.1 && d < 250.0) {
                     lastGoodDistanceIn = d;
                     lastGoodDistanceMs = now;
                 }
             }
         } catch (Exception e) {
-            llFaultUntilMs = now + LL_FAULT_COOLDOWN_MS;
+            cameraFaultUntilMs = now + CAMERA_FAULT_COOLDOWN_MS;
             out.hasTarget = false;
             out.pipeline = -1;
             out.tx = 0;
@@ -294,7 +287,14 @@ public class TeleOp_MainSubsystems extends OpMode {
         return out;
     }
 
-    private static class LimelightRead {
+    @Override
+    public void stop() {
+        if (logitech != null) {
+            logitech.close();
+        }
+    }
+
+    private static class CameraRead {
         boolean hasTarget = false;
         int pipeline = -1;
         double tx = 0.0;
